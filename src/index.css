@@ -1,0 +1,139 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* shadcn-style semantic tokens — Slate/Zinc base with Cyan accent and Emerald success */
+:root {
+  --background: oklch(0.985 0.002 247);
+  --foreground: oklch(0.21 0.03 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.03 265);
+  --muted: oklch(0.96 0.005 247);
+  --muted-foreground: oklch(0.55 0.03 257);
+  --border: oklch(0.91 0.01 255);
+  --input: oklch(0.91 0.01 255);
+  --primary: oklch(0.6 0.12 215);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.008 250);
+  --secondary-foreground: oklch(0.25 0.03 265);
+  --accent: oklch(0.95 0.03 210);
+  --accent-foreground: oklch(0.35 0.08 220);
+  --success: oklch(0.6 0.15 163);
+  --danger: oklch(0.6 0.21 22);
+  --ring: oklch(0.7 0.12 215);
+  --radius: 0.7rem;
+  --map-bg: #e5e7eb;
+}
+
+.dark {
+  --background: oklch(0.15 0.012 265);
+  --foreground: oklch(0.96 0.005 250);
+  --card: oklch(0.19 0.014 265);
+  --card-foreground: oklch(0.96 0.005 250);
+  --muted: oklch(0.24 0.015 265);
+  --muted-foreground: oklch(0.68 0.02 257);
+  --border: oklch(0.29 0.015 265);
+  --input: oklch(0.3 0.015 265);
+  --primary: oklch(0.79 0.13 210);
+  --primary-foreground: oklch(0.18 0.03 230);
+  --secondary: oklch(0.25 0.015 265);
+  --secondary-foreground: oklch(0.94 0.005 250);
+  --accent: oklch(0.3 0.05 220);
+  --accent-foreground: oklch(0.9 0.07 210);
+  --success: oklch(0.77 0.15 163);
+  --danger: oklch(0.68 0.2 22);
+  --ring: oklch(0.79 0.13 210);
+  --map-bg: #0e1117;
+}
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --animate-flash-ok: flash-ok 0.7s ease-out;
+  --animate-flash-bad: flash-bad 0.7s ease-out;
+  --animate-pop: pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+
+  @keyframes flash-ok {
+    0% { box-shadow: inset 0 0 0 0 transparent; }
+    25% { box-shadow: inset 0 0 0 6px var(--success), inset 0 0 120px color-mix(in oklch, var(--success) 35%, transparent); }
+    100% { box-shadow: inset 0 0 0 0 transparent; }
+  }
+  @keyframes flash-bad {
+    0% { box-shadow: inset 0 0 0 0 transparent; }
+    25% { box-shadow: inset 0 0 0 6px var(--danger), inset 0 0 120px color-mix(in oklch, var(--danger) 35%, transparent); }
+    100% { box-shadow: inset 0 0 0 0 transparent; }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html, body, #root { height: 100%; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ── Leaflet theming ─────────────────────────────────────────── */
+.leaflet-container { background: var(--map-bg); font-family: var(--font-sans); }
+.leaflet-tooltip.gl-tip {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.35);
+  padding: 8px 10px;
+  max-width: 280px;
+  white-space: normal;
+}
+.leaflet-tooltip.gl-tip::before { display: none; }
+.leaflet-tooltip.gl-label {
+  background: var(--foreground);
+  color: var(--background);
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 3px 8px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+  animation: var(--animate-pop);
+}
+.leaflet-tooltip.gl-label::before { display: none; }
+.leaflet-control-attribution { font-size: 10px; background: color-mix(in oklch, var(--card) 80%, transparent) !important; color: var(--muted-foreground); }
+.leaflet-control-attribution a { color: var(--primary); }
+.leaflet-control-zoom a { background: var(--card) !important; color: var(--foreground) !important; border-color: var(--border) !important; }
+.pin-mode .leaflet-container { cursor: crosshair; }
+
+.gl-pulse { animation: gl-pulse 1.6s ease-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes gl-pulse {
+  0% { opacity: 0.9; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(2.4); }
+}
