@@ -93,11 +93,11 @@ export function AnalyticsPanel(p: Props) {
       <Card>
         <CardHeader><CardTitle>Accuracy by sector</CardTitle><CardDescription>Click a district to see it on the map</CardDescription></CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-1.5">
+          {region.region.origin && <div className="grid grid-cols-2 gap-1.5">
             {(['NW', 'NE', 'SW', 'SE'] as Quadrant[]).map((q) => {
               const a = acc(stats.quadrants[q])
               return (
-                <button key={q} onClick={() => p.flyToRect(region.quadrants[q])}
+                <button key={q} onClick={() => p.flyToRect(region.quadrants[q]!)}
                   className="cursor-pointer rounded-lg border p-2 text-left transition-colors hover:bg-accent"
                   style={{ borderColor: a == null ? undefined : scoreColor(a), background: a == null ? undefined : `${scoreColor(a)}1a` }}>
                   <div className="text-xs font-semibold">{q} quadrant</div>
@@ -105,7 +105,7 @@ export function AnalyticsPanel(p: Props) {
                 </button>
               )
             })}
-          </div>
+          </div>}
           <div className="space-y-2">
             {districts.map(({ d, t }) => {
               const a = acc(t)

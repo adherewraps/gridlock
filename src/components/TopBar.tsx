@@ -71,7 +71,11 @@ export function TopBar(p: Props) {
   }, [q, p.region, p.pins])
 
   const o = p.region?.region.origin
-  const example = o && p.region ? `${p.region.corridorById.get(o.ew)?.name.split(' ')[0]} & ${p.region.corridorById.get(o.ns)?.name.split(' ')[0]}`.toLowerCase() : 'road & road'
+  // Example query: the address-origin junction, or any junction for regions without one.
+  const r = p.region
+  const exIx = r && ((o && r.intersectionById.get(`${o.ew}|${o.ns}`)) || r.intersections[0])
+  const first = (id: string) => r?.corridorById.get(id)?.name.split(' ')[0].toLowerCase()
+  const example = exIx ? `${first(exIx.a)} & ${first(exIx.b)}` : 'road & road'
   const pick = (h: SearchHit) => { p.onPick(h); setQ(''); setOpen(false) }
   const ring = 2 * Math.PI * 15
 
@@ -114,7 +118,7 @@ export function TopBar(p: Props) {
 
       {/* Layer toggles */}
       <div className="pointer-events-auto flex items-center gap-0.5 rounded-xl border bg-card/85 p-1 shadow-lg backdrop-blur-md">
-        {LAYER_BUTTONS.map(({ key, icon: Icon, label }) => (
+        {LAYER_BUTTONS.filter((b) => b.key !== 'sectors' || o).map(({ key, icon: Icon, label }) => (
           <Tip key={key} label={`${p.layers[key] ? 'Hide' : 'Show'} ${label.toLowerCase()}`}>
             <button
               aria-label={label}

@@ -60,9 +60,9 @@ export function ExplorerPanel(p: Props) {
           <CardContent className="flex gap-3 p-4">
             <Compass className="mt-0.5 size-5 shrink-0 text-primary" />
             <div className="space-y-1 text-[13px] leading-snug">
-              <div className="font-semibold">Start at {o.label}</div>
+              <div className="font-semibold">{p.region.region.introTitle ?? (o ? `Start at ${o.label}` : 'How the region fits together')}</div>
               <p className="text-muted-foreground">
-                {p.region.region.intro ?? o.note} Hover a road to inspect it; click to study it.
+                {p.region.region.intro ?? o?.note} Hover a road to inspect it; click to study it.
               </p>
             </div>
           </CardContent>
@@ -74,7 +74,7 @@ export function ExplorerPanel(p: Props) {
       <Card>
         <CardHeader><CardTitle>Map layers</CardTitle></CardHeader>
         <CardContent className="space-y-2.5">
-          {LAYER_ROWS.map(({ key, label, desc }) => (
+          {LAYER_ROWS.filter((r) => r.key !== 'sectors' || o).map(({ key, label, desc }) => (
             <label key={key} className="flex cursor-pointer items-center justify-between gap-3">
               <span>
                 <span className="block text-sm">{label}</span>

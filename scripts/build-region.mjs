@@ -40,11 +40,19 @@ async function overpass(name, query) {
       })
       const text = await res.text()
       if (res.ok && text.startsWith('{')) {
-        fs.mkdirSync(cacheDir, { recursive: true })
-        fs.writeFileSync(file, text)
-        return JSON.parse(text)
-      }
-      console.log(`  ${new URL(ep).host} busy (${res.status}); retrying`)
+        const json = JSON.parse(text)
+        // Some mirrors lag months behind; stale tags silently drop whole corridors.
+        const base = Date.parse(json.osm3s?.timestamp_osm_base ?? '')
+        const ageDays = (Date.now() - base) / 86_400_000
+        if (!(ageDays < 14)) {
+          console.log(`  ${new URL(ep).host} data is ${Number.isFinite(ageDays) ? Math.round(ageDays) + ' days' : 'of unknown age'} old; trying another mirror`)
+        } else {
+          fs.mkdirSync(cacheDir, { recursive: true })
+          fs.writeFileSync(file, text)
+          console.log(`  ${new URL(ep).host} (data as of ${json.osm3s.timestamp_osm_base})`)
+          return json
+        }
+      } else console.log(`  ${new URL(ep).host} busy (${res.status}); retrying`)
     } catch (e) {
       console.log(`  ${new URL(ep).host} failed (${e.message}); retrying`)
     }
@@ -60,22 +68,32 @@ const specs = def.corridors.map((c) => ({
   refTrunk: !!c.match?.refTrunk,
   nameHas: c.match?.nameHas,
   names: c.names ?? [],
+  // Full OSM names matched verbatim — needed where the direction IS the identity
+  // (Seattle's "15th Avenue Northwest" vs "15th Avenue Northeast" are unrelated roads).
+  exact: c.exact ?? [],
   within: c.within ?? null,
 }))
 const allRefs = [...new Set(specs.flatMap((s) => s.refs))].map(esc)
 const allNames = [...new Set(specs.flatMap((s) => s.names))].map(esc)
+const allExact = [...new Set(specs.flatMap((s) => s.exact))].map(esc)
+const DIR = '(North|South|East|West|Northeast|Northwest|Southeast|Southwest)'
+const nameAlternatives = [
+  ...(allNames.length ? [`(${DIR} )?(${allNames.join('|')})( ${DIR})?`] : []),
+  ...allExact,
+]
 const box = `${S},${W},${N},${E}`
 
 const osm = await overpass('roads', `[out:json][timeout:240];
 (
   ${allRefs.length ? `way["highway"~"^(motorway|trunk)$"]["ref"~"${allRefs.join('|')}"](${box});` : ''}
-  ${allNames.length ? `way["highway"~"^(motorway|trunk|primary|secondary|tertiary)$"]["name"~"^(North |South |East |West )?(${allNames.join('|')})$"](${box});` : ''}
+  ${nameAlternatives.length ? `way["highway"~"^(motorway|trunk|primary|secondary|tertiary)$"]["name"~"^(${nameAlternatives.join('|')})$"](${box});` : ''}
 );
 out geom;`)
 console.log(`Roads: ${osm.elements.length} ways`)
 
 // ── 2. Assign ways to corridors (a way may carry several routes) ───────────
-const stripDir = (n) => n.replace(/^(North|South|East|West) /, '')
+const DIRS = 'North|South|East|West|Northeast|Northwest|Southeast|Southwest'
+const stripDir = (n) => n.replace(new RegExp(`^(${DIRS}) `), '').replace(new RegExp(` (${DIRS})$`), '')
 const inBox = ([la, lo], [s, w, n, e]) => la >= s && la <= n && lo >= w && lo <= e
 function corridorsFor(tags, mid) {
   const out = []
@@ -83,7 +101,7 @@ function corridorsFor(tags, mid) {
     if (s.within && !inBox(mid, s.within)) continue
     const refOk = s.refs.length && (tags.highway === 'motorway' || (s.refTrunk && tags.highway === 'trunk')) &&
       (tags.ref ?? '').split(';').some((r) => s.refs.some((p) => r.trim() === p || r.trim().startsWith(p + ' ')))
-    const nameOk = s.names.length && tags.name && s.names.includes(stripDir(tags.name))
+    const nameOk = !!tags.name && (s.names.includes(stripDir(tags.name)) || s.exact.includes(tags.name))
     if (!refOk && !nameOk) continue
     if (s.nameHas && !(tags.name ?? '').includes(s.nameHas)) continue
     out.push(s.c)
@@ -155,7 +173,11 @@ const linesOf = (list) => chain(list.map((w) => w.pts)).map((l) => simplify(l, 0
 const geo = new Map()
 for (const [id, ws] of ways) {
   geo.set(id, linesOf(ws))
-  if (!ws.length) console.warn(`  ⚠ no OSM ways matched corridor "${id}"`)
+}
+const unmatched = [...ways].filter(([, ws]) => !ws.length).map(([id]) => id)
+if (unmatched.length && !process.argv.includes('--allow-missing')) {
+  console.error(`✗ No OSM ways matched: ${unmatched.join(', ')}. Check names/refs (or pass --allow-missing).`)
+  process.exit(1)
 }
 
 // ── 3. Intersections ────────────────────────────────────────────────────────
@@ -299,7 +321,14 @@ const nameOf = Object.fromEntries(def.corridors.map((c) => [c.id, c.name]))
 const districts = def.districts.map((d) => {
   if (d.osm) {
     const rings = boundaryRings(d.osm)
-    return { id: d.id, name: d.name, why: d.why, kind: 'municipality', rings, rect: bboxOf(rings).map(round), boundedBy: { west: null, south: null, east: null, north: null } }
+    return { id: d.id, name: d.name, why: d.why, kind: d.kind ?? 'municipality', rings, rect: bboxOf(rings).map(round), boundedBy: { west: null, south: null, east: null, north: null } }
+  }
+  if (d.around) {
+    // Square of ±halfKm around a verified neighborhood point (approximate area).
+    const [la, lo] = d.around, h = d.halfKm ?? 0.8
+    const dLat = h / 111.32, dLon = h / (111.32 * Math.cos((la * Math.PI) / 180))
+    const [s, w, n, e] = [la - dLat, lo - dLon, la + dLat, lo + dLon].map(round)
+    return { id: d.id, name: d.name, why: d.why, kind: 'area', rect: [s, w, n, e], rings: [[[s, w], [s, e], [n, e], [n, w]]], boundedBy: { west: null, south: null, east: null, north: null } }
   }
   const [w, s, e, n] = d.bounds.map((b) => (typeof b === 'number' ? b : axisValue[b]))
   if ([w, s, e, n].some((v) => v == null)) throw new Error(`District ${d.id} references a corridor without an axis`)
@@ -315,11 +344,12 @@ const districts = def.districts.map((d) => {
 const g = def.grid
 const out = {
   region: {
-    id: def.id, name: def.name, center: def.center, zoom: def.zoom, bbox: def.bbox, intro: def.intro,
-    origin: {
+    id: def.id, name: def.name, center: def.center, zoom: def.zoom, bbox: def.bbox, intro: def.intro, introTitle: def.introTitle,
+    // Not every city has a single address origin (Seattle uses 8 directional sectors).
+    origin: g ? {
       lat: axisValue[g.ew], lon: axisValue[g.ns], ew: g.ew, ns: g.ns,
       extent: g.extent ?? def.bbox, label: g.label, note: g.note, eastHint: g.eastHint, westHint: g.westHint,
-    },
+    } : null,
   },
   corridors, intersections, districts,
   landmarks: def.landmarks,

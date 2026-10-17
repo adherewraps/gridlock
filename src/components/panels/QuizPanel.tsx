@@ -125,7 +125,7 @@ function Active(p: Props & { session: QuizSession }) {
           {useText ? (
             <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) p.answer({ text }) }} className="flex gap-2">
               <Input ref={inputRef} value={text} disabled={!!s.answered} onChange={(e) => setText(e.target.value)}
-                placeholder={`e.g. ${p.region.ixLabel(p.region.intersectionById.get(`${p.region.region.origin.ew}|${p.region.region.origin.ns}`) ?? p.region.intersections[0])}`} className="font-medium" />
+                placeholder={`e.g. ${p.region.ixLabel((p.region.region.origin && p.region.intersectionById.get(`${p.region.region.origin.ew}|${p.region.region.origin.ns}`)) || p.region.intersections[0])}`} className="font-medium" />
               <Button type="submit" disabled={!!s.answered || !text.trim()}>Check</Button>
             </form>
           ) : (

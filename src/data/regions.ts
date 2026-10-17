@@ -3,6 +3,7 @@ import type { RegionData } from '@/lib/region'
 /** Region registry. Each region's geometry is its own lazily-loaded chunk. */
 export const REGIONS = [
   { id: 'triad', name: 'Piedmont Triad, NC', load: () => import('./triad.json') },
+  { id: 'seattle', name: 'Seattle Metro, WA', load: () => import('./seattle.json') },
   { id: 'phoenix', name: 'Phoenix Metro, AZ', load: () => import('./phoenix.json') },
 ] as const satisfies readonly { id: string; name: string; load: () => Promise<{ default: unknown }> }[]
 

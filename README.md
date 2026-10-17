@@ -1,8 +1,10 @@
 # GridLock — local geography trainer
 
 Gamified spatial-memory trainer for a metro's freeways, arterials, districts and key junctions.
-Ships with the **Piedmont Triad, NC** (Greensboro · Winston-Salem · High Point · Burlington) as the default
-region and **Phoenix** as a second — switch in the sidebar header. Progress and pins are stored per region.
+Ships with three regions — switch in the sidebar header; progress and pins are stored per region:
+- **Piedmont Triad, NC** (default) — Greensboro, Winston-Salem, High Point, Burlington; Elm & Market address origin
+- **Seattle Metro, WA** — Seattle, the Eastside and the south end; lake crossings and directional sectors (no single origin)
+- **Phoenix Metro, AZ** — the one-mile arterial grid around Central & Washington
 
 ```bash
 npm install
@@ -19,7 +21,9 @@ All progress, pins and preferences persist in `localStorage` (`gridlock:*` keys)
 
 ## Data pipeline
 `scripts/region.<id>.mjs` is the only hand-written file per region: corridor **names / route refs**, descriptions,
-districts (rectangles, or `osm: 'Town Name'` for real municipal boundaries), the address-grid origin, and landmarks.
+districts (`bounds` rectangles, `around: [lat, lon]` squares, or `osm: 'Town Name'` for real municipal boundaries),
+an optional address-grid origin, and landmarks. Use `names` for direction-agnostic matching ("Market Street" matches
+"West Market Street") and `exact` where the direction *is* the identity (Seattle's "15th Avenue Northwest").
 `scripts/build-region.mjs` pulls matching geometry from Overpass, then **derives** intersections (crossings,
 T-junctions, freeway merges — and correctly ignores concurrent routes like I-40/I-85 sharing pavement), grid axes,
 and district outlines.
@@ -28,6 +32,9 @@ and district outlines.
 node scripts/build-region.mjs --region=triad            # uses scripts/.cache if present
 node scripts/build-region.mjs --region=triad --refresh  # re-download from OpenStreetMap
 ```
+
+The build refuses Overpass mirrors whose data is more than 14 days old (stale route tags silently drop corridors)
+and fails if any corridor matches no OSM ways.
 
 To add a region: write `scripts/region.<id>.mjs`, run the build with `--region=<id>`, and register it in `src/data/regions.ts`.
 

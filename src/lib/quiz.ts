@@ -35,6 +35,7 @@ type Side = 'north' | 'south' | 'east' | 'west'
 const SIDES: Side[] = ['north', 'south', 'east', 'west']
 
 function gridPosition(r: Region, p: LatLng) {
+  if (!r.region.origin) return null
   const { lat, lon } = r.region.origin
   const ns = meters([lat, lon], [p[0], lon]), ew = meters([lat, lon], [lat, p[1]])
   return `${fmtMi(ns)} ${p[0] >= lat ? 'N' : 'S'} · ${fmtMi(ew)} ${p[1] >= lon ? 'E' : 'W'} of ${r.region.origin.label}`
@@ -65,7 +66,7 @@ function intersectionQ(r: Region, ix: Intersection): Question {
     focus: { kind: 'point', at: ix.at, zoom: A.kind === 'freeway' && B.kind === 'freeway' ? 13 : 14 },
     reveal: { corridors: [ix.a, ix.b], label: r.ixLabel(ix), labelAt: ix.at },
     explanation: [
-      `${r.ixLabel(ix)} — ${r.describe(ix.at)}; ${gridPosition(r, ix.at)}.`,
+      `${r.ixLabel(ix)} — ${[r.describe(ix.at), gridPosition(r, ix.at)].filter(Boolean).join('; ')}.`,
       `${A.name}: ${firstSentence(A.desc)}`,
       `${B.name}: ${firstSentence(B.desc)}`,
       ...(near && near.d < 3000 ? [`Nearest anchor: ${near.l.name} (${fmtMi(near.d)} away).`] : []),
@@ -104,10 +105,10 @@ function districtQ(r: Region, d: District): Question {
 }
 
 function quadrantQ(r: Region, q: Quadrant): Question {
-  const rect = r.quadrants[q]
+  const rect = r.quadrants[q]!
   const names: Record<Quadrant, string> = { NW: 'Northwest', NE: 'Northeast', SW: 'Southwest', SE: 'Southeast' }
   const ns = q[0] === 'N' ? 'north' : 'south', ew = q[1] === 'E' ? 'east' : 'west'
-  const o = r.region.origin
+  const o = r.region.origin!
   const ewName = r.corridorById.get(o.ew)?.name, nsName = r.corridorById.get(o.ns)?.name
   return {
     key: `qd:${q}`,
@@ -197,7 +198,7 @@ export function poolFor(r: Region, anchors: Anchor[], type: QuizType): string[] 
   if (type === 'connection') return connectionKeys(r, anchors)
   return [
     ...r.districts.map((d) => `bd:${d.id}`),
-    ...(['NW', 'NE', 'SW', 'SE'] as const).map((q) => `qd:${q}`),
+    ...(r.region.origin ? (['NW', 'NE', 'SW', 'SE'] as const).map((q) => `qd:${q}`) : []),
     ...r.districts.flatMap((d) => SIDES.filter((s) => d.boundedBy[s]).map((s) => `be:${d.id}:${s}`)),
   ]
 }
@@ -206,7 +207,7 @@ export function buildQuestion(r: Region, anchors: Anchor[], key: string): Questi
   const [kind, ...rest] = key.split(':')
   if (kind === 'ix') { const ix = r.intersectionById.get(rest.join(':')); return ix ? intersectionQ(r, ix) : null }
   if (kind === 'bd') { const d = r.districtById.get(rest[0]); return d ? districtQ(r, d) : null }
-  if (kind === 'qd') return quadrantQ(r, rest[0] as Quadrant)
+  if (kind === 'qd') return r.quadrants[rest[0] as Quadrant] ? quadrantQ(r, rest[0] as Quadrant) : null
   if (kind === 'be') { const d = r.districtById.get(rest[0]); return d ? edgeQ(r, d, rest[1] as Side) : null }
   if (kind === 'cn') {
     const c = r.corridorById.get(rest[0])

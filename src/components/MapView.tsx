@@ -131,7 +131,8 @@ export function MapView(props: Props) {
   const { region, dark, layers, quiz, route } = props
   const quizActive = !!quiz
   const unanswered = !!quiz && !quiz.answered
-  const zeroLines = new Set([region.region.origin.ew, region.region.origin.ns])
+  const origin = region.region.origin
+  const zeroLines = new Set(origin ? [origin.ew, origin.ns] : [])
   const revealSet = new Set(quiz?.answered ? quiz.question.reveal.corridors : [])
   const routeSet = new Set(route?.verdict?.optimal.corridors ?? [])
 
@@ -176,14 +177,14 @@ export function MapView(props: Props) {
 
       {/* Address quadrants */}
       {layers.sectors && !unanswered && (Object.keys(region.quadrants) as Quadrant[]).map((q) => (
-        <Rectangle key={q} bounds={rectBounds(region.quadrants[q])}
+        <Rectangle key={q} bounds={rectBounds(region.quadrants[q]!)}
           pathOptions={{ color: QUADRANT_COLORS[q], weight: 1, opacity: 0.5, fillColor: QUADRANT_COLORS[q], fillOpacity: dark ? 0.07 : 0.1, dashArray: '6 6' }}>
           <Tooltip sticky className="gl-tip">
             <div className="text-sm font-semibold">{q} quadrant</div>
             <div className="text-xs text-muted-foreground">
-              {q[0] === 'N' ? 'North' : 'South'} of {region.corridorById.get(region.region.origin.ew)?.name},{' '}
-              {q[1] === 'E' ? 'east' : 'west'} of {region.corridorById.get(region.region.origin.ns)?.name}.{' '}
-              {(q[1] === 'E' ? region.region.origin.eastHint : region.region.origin.westHint) ?? ''}
+              {q[0] === 'N' ? 'North' : 'South'} of {region.corridorById.get(origin!.ew)?.name},{' '}
+              {q[1] === 'E' ? 'east' : 'west'} of {region.corridorById.get(origin!.ns)?.name}.{' '}
+              {(q[1] === 'E' ? origin!.eastHint : origin!.westHint) ?? ''}
             </div>
           </Tooltip>
         </Rectangle>

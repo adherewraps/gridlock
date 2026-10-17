@@ -45,7 +45,12 @@ export interface GridOrigin {
 }
 
 export interface RegionData {
-  region: { id: string; name: string; center: LatLng; zoom: number; bbox: Rect; intro?: string; origin: GridOrigin }
+  region: {
+    id: string; name: string; center: LatLng; zoom: number; bbox: Rect
+    intro?: string; introTitle?: string
+    /** Null for cities without a single address origin. */
+    origin: GridOrigin | null
+  }
   corridors: Corridor[]
   intersections: Intersection[]
   districts: District[]
@@ -128,7 +133,8 @@ export interface Region extends RegionData {
   corridorById: Map<string, Corridor>
   intersectionById: Map<string, Intersection>
   districtById: Map<string, District>
-  quadrants: Record<Quadrant, Rect>
+  /** Empty when the region has no address origin. */
+  quadrants: Partial<Record<Quadrant, Rect>>
   quadrantOf: (p: LatLng) => Quadrant | null
   /** Most specific district containing p (areas are listed before municipalities). */
   districtAt: (p: LatLng) => District | undefined
@@ -146,15 +152,16 @@ export function indexRegion(data: RegionData): Region {
   const intersectionById = new Map(data.intersections.map((x) => [x.id, x]))
   const districtById = new Map(data.districts.map((d) => [d.id, d]))
   const { origin } = data.region
-  const [S, W, N, E] = origin.extent
-  const quadrants: Record<Quadrant, Rect> = {
-    NW: [origin.lat, W, N, origin.lon],
-    NE: [origin.lat, origin.lon, N, E],
-    SW: [S, W, origin.lat, origin.lon],
-    SE: [S, origin.lon, origin.lat, E],
+  const quadrants: Partial<Record<Quadrant, Rect>> = {}
+  if (origin) {
+    const [S, W, N, E] = origin.extent
+    quadrants.NW = [origin.lat, W, N, origin.lon]
+    quadrants.NE = [origin.lat, origin.lon, N, E]
+    quadrants.SW = [S, W, origin.lat, origin.lon]
+    quadrants.SE = [S, origin.lon, origin.lat, E]
   }
   const quadrantOf = (p: LatLng): Quadrant | null =>
-    inRect(p, origin.extent) ? (`${p[0] >= origin.lat ? 'N' : 'S'}${p[1] >= origin.lon ? 'E' : 'W'}` as Quadrant) : null
+    origin && inRect(p, origin.extent) ? (`${p[0] >= origin.lat ? 'N' : 'S'}${p[1] >= origin.lon ? 'E' : 'W'}` as Quadrant) : null
   const inDistrict = (p: LatLng, d: District) => inRect(p, d.rect) && inRings(p, d.rings)
   const districtsAt = (p: LatLng) => data.districts.filter((d) => inDistrict(p, d))
   const districtAt = (p: LatLng) => data.districts.find((d) => inDistrict(p, d))
