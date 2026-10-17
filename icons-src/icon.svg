@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1b2d"/><stop offset="1" stop-color="#0a0f1a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.55"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- faint street grid -->
+  <g stroke="#1f2a3d" stroke-width="10">
+    <path d="M0 232H1024M0 372H1024M0 652H1024M0 792H1024M232 0V1024M372 0V1024M652 0V1024M792 0V1024"/>
+  </g>
+  <!-- the loop -->
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#ec4899" stroke-width="44" opacity="0.95"/>
+  <!-- the two zero-lines -->
+  <g stroke="#22d3ee" stroke-width="56" stroke-linecap="round">
+    <path d="M150 512H874"/><path d="M512 150V874"/>
+  </g>
+  <!-- the junction being quizzed -->
+  <circle cx="512" cy="512" r="190" fill="url(#glow)"/>
+  <circle cx="512" cy="512" r="78" fill="#34d399" stroke="#0a0f1a" stroke-width="22"/>
+</svg>

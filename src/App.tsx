@@ -167,12 +167,13 @@ function Workspace({ regionId, setRegionId, dark, setDark }: WorkspaceProps) {
         {/* Sidebar */}
         <aside
           className={cn(
-            'flex flex-col border-t bg-background transition-[width,height] duration-300 md:border-l md:border-t-0',
+            'flex flex-col border-t bg-background transition-[width,height] duration-300 md:border-l md:border-t-0 md:pr-[env(safe-area-inset-right)]',
             sidebarOpen ? 'h-[52vh] md:h-auto md:w-[30%] md:min-w-[360px] md:max-w-[480px]' : 'h-0 md:h-auto md:w-0 overflow-hidden',
           )}
         >
           <Tabs value={tab} onValueChange={(v) => { setTab(v as Tab); setPinMode(false) }} className="flex min-h-0 flex-1 flex-col">
-            <div className="border-b p-3">
+            {/* In landscape the sidebar runs up under the status bar / camera housing. */}
+            <div className="border-b p-3 md:pt-[max(0.75rem,env(safe-area-inset-top))]">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <NativeSelect aria-label="Region" value={regionId} onChange={(e) => setRegionId(e.target.value as RegionId)}
                   className="h-8 w-auto border-transparent bg-transparent pl-0 text-sm font-semibold tracking-tight hover:bg-accent">
@@ -187,7 +188,7 @@ function Workspace({ regionId, setRegionId, dark, setDark }: WorkspaceProps) {
                 <TabsTrigger value="analytics"><BarChart3 />Analytics</TabsTrigger>
               </TabsList>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 safe-bottom">
               {!region ? (
                 <div className="space-y-3">
                   <Skeleton className="h-24 w-full" />

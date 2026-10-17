@@ -157,10 +157,11 @@ export function MapView(props: Props) {
       className="h-full w-full"
       preferCanvas={false}
     >
-      <TileLayer key={theme} url={ESRI(`World_${theme}_Gray_Base`)} maxNativeZoom={16} attribution={`${ATTR} · Roads ${region.attribution}`} />
+      {/* crossOrigin → CORS tile requests, which the service worker can cache without opaque-response quota padding */}
+      <TileLayer key={theme} url={ESRI(`World_${theme}_Gray_Base`)} maxNativeZoom={16} crossOrigin attribution={`${ATTR} · Roads ${region.attribution}`} />
       {showLabels && (
         <Pane name="labels" style={{ zIndex: 460, pointerEvents: 'none' }}>
-          <TileLayer key={`l${theme}`} url={ESRI(`World_${theme}_Gray_Reference`)} maxNativeZoom={16} />
+          <TileLayer key={`l${theme}`} url={ESRI(`World_${theme}_Gray_Reference`)} maxNativeZoom={16} crossOrigin />
         </Pane>
       )}
       {/* ZoomCap must run before CameraController: setMaxZoom snaps zoom and would cancel a flyTo. */}

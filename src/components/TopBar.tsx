@@ -80,7 +80,7 @@ export function TopBar(p: Props) {
   const ring = 2 * Math.PI * 15
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] flex flex-wrap items-start gap-2 p-3">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] flex flex-wrap items-start gap-2 pb-3 safe-top safe-x">
       {/* Brand + search */}
       <div className="pointer-events-auto relative flex min-w-0 flex-1 basis-64 items-center gap-2 rounded-xl border bg-card/85 px-3 py-1.5 shadow-lg backdrop-blur-md sm:max-w-sm">
         <div className="hidden items-center gap-1.5 pr-2 font-semibold tracking-tight sm:flex">
